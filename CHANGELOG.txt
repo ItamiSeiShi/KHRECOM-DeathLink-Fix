@@ -1,0 +1,34 @@
+KHRECOM DeathLink Fix - 2026-10-17
+
+Incoming Lua bridge
+- Read the client's dlreceive marker and request native game over through the
+  Sora actor's controller (Steam defeat entry RVA 1F17F0; controller RVA 210DC0).
+- Set controller flags, delay and state 7 in addition to the actor death fields.
+  HP/action writes alone did not start game over in this build.
+- Validate actor stats, controller ownership and vtables before writing.
+- Acknowledge a linked death after observing the game-over screen.
+- Ignore duplicate, malformed, expired and far-future markers.
+- Suppress an outgoing echo when continuing after a received death.
+
+Outgoing Lua bridge
+- Report natural deaths on Continue.
+- Preserve the pending death across the brief actor-pointer unload during retry.
+- Clear pending state after a longer unload, including the tested title path.
+
+Client
+- Process dlsend markers separately from ordinary send-location files.
+- Parse UTC death timestamps and validate age without the old modulo expression.
+- Handle malformed/stale markers, disconnects and marker cleanup.
+- Publish incoming markers atomically and report bridge write failures.
+- Publish a connected/enabled heartbeat for the Lua bridge.
+- Add /deathlinktest for a local-only incoming test through the normal handler.
+
+Validation
+- 16 full-bridge tests, 11 client tests and 3 local-command tests passed.
+- Lua assignments were compared with the successful controlled live defeat test.
+- Natural death -> Continue -> client send was verified; the user also confirmed
+  that their friend received it and died.
+- Friend's real server DeathLink -> Sora game over -> Continue without outgoing
+  echo was verified.
+
+The original item/check connector and EXP multiplier were not modified.

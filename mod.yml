@@ -1,0 +1,21 @@
+title: RECOM Archipelago Companion - DeathLink Fix
+originalAuthor: Gicu
+game: Recom
+description: >-
+  Complete Archipelago companion with the tested Steam Sora DeathLink fix.
+  Incoming deaths defeat Sora; natural deaths send on Continue. Replaces the
+  original RECOM Archipelago companion. Requires LuaBackend and the bundled
+  patched khrecom.apworld; use Install-Fixed-Client.ps1 or follow README.txt.
+assets:
+- name: scripts/recomAPConnector.lua
+  method: copy
+  source:
+  - name: recomAPConnector.lua
+- name: scripts/recomAPEXPMultiplier.lua
+  method: copy
+  source:
+  - name: recomAPEXPMultiplier.lua
+- name: scripts/recomAPDeathLink.lua
+  method: copy
+  source:
+  - name: recomAPDeathLink.lua
