@@ -11,7 +11,7 @@ $ErrorActionPreference = 'Stop'
 
 function Install-KhrecomFixedClient {
     $taskSource = Join-Path $PSScriptRoot 'client\khrecom.apworld'
-    $taskExpectedHash = '4745B3F906A3DE39183B1A2052D5AF2DC565125FBD3118CB2ADCA1E5551F9EC9'
+    $taskExpectedHash = '7E40295EF2D00CA7205B017EAECB1D3D849EB8C09167971F17D6E3878BA6B0F3'
     if (!(Test-Path -LiteralPath $taskSource -PathType Leaf)) {
         throw 'The bundled client is missing. Extract the entire mod ZIP before running this installer.'
     }

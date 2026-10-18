@@ -9,7 +9,19 @@ Hearts Re:Chain of Memories (Steam, Sora)**.
 - Includes the original item/check connector and EXP multiplier.
 
 Both directions were tested with real players. The Lua bridge, client, and local
-test command also passed 30 automated checks.
+test command passed 34 automated checks for v1.0.1, including real Windows
+file-sharing locks.
+
+## v1.0.1 client update
+
+Fixes `PermissionError: [WinError 5]` when Lua reads `dlstate.cfg` while the
+client replaces it. Bridge writes retry without blocking, and incoming deaths
+remain pending until written successfully.
+
+If v1.0.0 is installed, close the KHRECOM client and run the updated client
+installer below. Restart the client and enable `/deathlink`. The existing Lua
+bridge is compatible with this update. For persistent warnings, close duplicate
+clients and check the bridge folder's write permissions.
 
 ## Install the mod
 

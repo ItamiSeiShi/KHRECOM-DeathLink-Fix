@@ -1,3 +1,15 @@
+KHRECOM DeathLink Fix v1.0.1 - 2026-10-18
+
+- Fix Windows access-denied errors when Lua reads dlstate.cfg during replacement.
+- Retry bridge writes on the watcher loop without blocking the client.
+- Keep incoming DeathLinks pending until the marker is written successfully.
+- Use unique temporary files and limit repeated warnings during longer locks.
+- The game-side Lua and world generation data are unchanged.
+
+Validation: 18 client/local-command checks, including actual Windows file locks,
+and 16 existing full Lua bridge checks passed. The installer is checked for
+backup preservation, exact installation and repeated installation.
+
 KHRECOM DeathLink Fix - 2026-10-17
 
 Incoming Lua bridge

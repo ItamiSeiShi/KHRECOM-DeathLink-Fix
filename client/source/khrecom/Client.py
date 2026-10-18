@@ -6,6 +6,7 @@ import shutil
 import logging
 import time
 import math
+import tempfile
 from calendar import timegm
 
 import ModuleUpdate
@@ -157,14 +158,9 @@ class KHRECOMContext(CommonContext):
             logger.info(f"DeathLink: {text}")
         else:
             logger.info(f"DeathLink: Received from {data['source']}")
-        # Publish complete contents atomically so Lua cannot read a partial write.
-        marker = os.path.join(self.game_communication_path, 'dlreceive')
-        try:
-            with open(marker + '.tmp', 'w') as f:
-                f.write(str(data["time"]))
-            os.replace(marker + '.tmp', marker)
-        except OSError:
-            logger.exception("DeathLink: could not write the game bridge marker")
+        # Retain the newest event until Lua's bridge can accept it.
+        self._pending_deathlink_timestamp = self.last_death_link
+        publish_pending_deathlink(self)
 
     def run_gui(self):
         """Import kivy UI system and start running it as self.ui_task."""
@@ -222,16 +218,57 @@ async def process_death_marker(ctx, root: str, filename: str):
 
 
 
+def publish_bridge_text(ctx, name, contents):
+    """Try once; the watcher retries locked files without blocking networking."""
+    target = os.path.join(ctx.game_communication_path, name)
+    temporary = None
+    failures = getattr(ctx, "_bridge_write_failures", None)
+    if failures is None:
+        failures = ctx._bridge_write_failures = {}
+    try:
+        # Each attempt owns its temporary file, including with multiple clients.
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf8", newline="\n",
+                                         dir=ctx.game_communication_path,
+                                         prefix="." + name + "-", suffix=".tmp",
+                                         delete=False) as stream:
+            temporary = stream.name
+            stream.write(contents)
+        os.replace(temporary, target)
+    except OSError as error:
+        now = time.monotonic()
+        failure = failures.setdefault(name, {"first": now, "warned": None})
+        # Lua's ordinary read handle briefly prevents replacement on Windows.
+        # Persistent failures remain visible without a traceback every heartbeat.
+        if ((not isinstance(error, PermissionError) or now - failure["first"] >= 1)
+                and (failure["warned"] is None or now - failure["warned"] >= 30)):
+            logger.warning("DeathLink: waiting to write %s; retrying automatically: %s", name, error)
+            failure["warned"] = now
+        return False
+    else:
+        failure = failures.pop(name, None)
+        if failure and failure["warned"] is not None:
+            logger.info("DeathLink: bridge write recovered for %s", name)
+        return True
+    finally:
+        if temporary is not None:
+            try:
+                os.remove(temporary)
+            except FileNotFoundError:
+                pass  # Successful replacement consumed our temporary file.
+            except OSError:
+                pass  # Cleanup must not discard a pending DeathLink.
+
+
+def publish_pending_deathlink(ctx):
+    timestamp = getattr(ctx, "_pending_deathlink_timestamp", None)
+    if timestamp is not None and publish_bridge_text(ctx, "dlreceive", str(timestamp)):
+        ctx._pending_deathlink_timestamp = None
+
+
 def publish_deathlink_state(ctx):
     """Give Lua a short-lived heartbeat reflecting connection and subscription."""
     active = bool("DeathLink" in ctx.tags and ctx.server and ctx.server.socket and ctx.slot is not None)
-    target = os.path.join(ctx.game_communication_path, "dlstate.cfg")
-    try:
-        with open(target + ".tmp", "w") as state_file:
-            state_file.write(f"{int(active)}\n{int(time.time())}\n")
-        os.replace(target + ".tmp", target)
-    except OSError:
-        logger.exception("DeathLink: could not publish bridge state")
+    return publish_bridge_text(ctx, "dlstate.cfg", f"{int(active)}\n{int(time.time())}\n")
 
 
 async def game_watcher(ctx: KHRECOMContext):
@@ -245,8 +282,9 @@ async def game_watcher(ctx: KHRECOMContext):
             await ctx.update_death_link(death_link)
         heartbeat_second = int(time.time())
         if heartbeat_second != last_bridge_heartbeat:
-            publish_deathlink_state(ctx)
-            last_bridge_heartbeat = heartbeat_second
+            if publish_deathlink_state(ctx):
+                last_bridge_heartbeat = heartbeat_second
+        publish_pending_deathlink(ctx)
         if ctx.syncing == True:
             sync_msg = [{'cmd': 'Sync'}]
             if ctx.locations_checked:

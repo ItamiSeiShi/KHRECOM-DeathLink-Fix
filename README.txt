@@ -1,9 +1,18 @@
 RECOM Archipelago Companion - DeathLink Fix
-OpenKH-installable mod archive, 2026-10-17
+OpenKH-installable mod archive, v1.0.1 - 2026-10-18
 
 This replaces the original RECOM Archipelago Companion with the same item/check
 connector, EXP multiplier and the working DeathLink bridge. Original companion
 credit: Gicu. The DeathLink repair is an unofficial local patch.
+
+UPGRADING FROM v1.0.0
+
+This update fixes Windows access-denied errors writing dlstate.cfg. Close the
+KHRECOM client, run this version's client installer, restart the client and
+turn DeathLink on with /deathlink. Existing game-side Lua can remain installed.
+The client retries temporary sharing locks and retains incoming death requests.
+If a warning persists, close any duplicate KHRECOM client and check the bridge
+folder's write permissions.
 
 WHAT IS THE FIXED CLIENT?
 
