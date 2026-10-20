@@ -1,18 +1,28 @@
 RECOM Archipelago Companion - DeathLink Fix
-OpenKH-installable mod archive, v1.0.1 - 2026-10-18
+OpenKH-installable mod archive, v1.0.2 - 2026-10-19
 
 This replaces the original RECOM Archipelago Companion with the same item/check
 connector, EXP multiplier and the working DeathLink bridge. Original companion
 credit: Gicu. The DeathLink repair is an unofficial local patch.
 
-UPGRADING FROM v1.0.0
+UPGRADING FROM v1.0.1
 
-This update fixes Windows access-denied errors writing dlstate.cfg. Close the
-KHRECOM client, run this version's client installer, restart the client and
-turn DeathLink on with /deathlink. Existing game-side Lua can remain installed.
-The client retries temporary sharing locks and retains incoming death requests.
-If a warning persists, close any duplicate KHRECOM client and check the bridge
-folder's write permissions.
+The Lua bridge now detects the game's Continue selection directly. This fixes
+missed outgoing DeathLinks when boss retries unload Sora for longer than two
+seconds, as recorded in the first Larxene fight.
+
+Close the game, update this mod in OpenKH (or import the v1.0.2 ZIP), enable
+only one DeathLink companion, rebuild your mods and restart the game. Keep any
+backed-up Lua outside active script folders. The client archive is identical
+to v1.0.1, so its client does not need reinstalling. If the client stayed open,
+DeathLink can remain enabled; after a fresh client launch enter /deathlink.
+
+UPGRADING FROM v1.0.0 OR AN OLDER PATCH
+
+Update and rebuild the OpenKH mod as above. Also close the KHRECOM client and
+run the included Install-Fixed-Client.ps1, which verifies the archive and backs
+up the previous client. Restart the client, reconnect and enable /deathlink.
+This includes v1.0.1's fix for Windows file-sharing errors writing dlstate.cfg.
 
 WHAT IS THE FIXED CLIENT?
 
@@ -70,7 +80,9 @@ load your save, and enter /deathlink in the client. Verify it says Death Link
 turned on. This is a toggle and needs enabling after a fresh client launch.
 
 Incoming DeathLinks defeat Sora. Your natural deaths are sent when you press
-Continue. Continuing after a received death does not echo that death back.
+Continue. Vexen auto-revive does not send a death; a later game over followed
+by Continue still sends one. Continuing after a received death does not echo
+that death back.
 /deathlinktest triggers one local incoming test and intentionally defeats Sora,
 without sending a death to other players. Keep gameplay running for about
 eight seconds so the game-over sequence can finish.

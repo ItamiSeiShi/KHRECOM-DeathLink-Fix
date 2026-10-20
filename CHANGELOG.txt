@@ -1,3 +1,20 @@
+KHRECOM DeathLink Fix v1.0.2 - 2026-10-19
+
+- Detect the game's native Continue choice before Sora unloads during a retry.
+- Fix missed outgoing DeathLinks after long boss retries, verified in the first
+  Larxene fight (the recorded actor unload lasted about 2.7 seconds).
+- Clear pending deaths on the native Return to Title choice.
+- Avoid sending a second death while the defeated actor remains during a fade.
+- Preserve received-death echo suppression.
+- Confirm Vexen's automatic revival sends nothing; a later actual defeat sends
+  one DeathLink when Continue is selected.
+
+Validation: 27 Lua checks passed, including replays of the recorded Larxene and
+Vexen sequences. Live client logs confirmed one outgoing send for each final
+Continue test. The 18 client/local-command checks, real OpenKH build and client
+installer backup/repeat checks also passed. Client files are unchanged from
+v1.0.1; no reinstall is required for users already running that client.
+
 KHRECOM DeathLink Fix v1.0.1 - 2026-10-18
 
 - Fix Windows access-denied errors when Lua reads dlstate.cfg during replacement.

@@ -8,20 +8,30 @@ Hearts Re:Chain of Memories (Steam, Sora)**.
 - Continuing after a received death does not echo it back to other players.
 - Includes the original item/check connector and EXP multiplier.
 
-Both directions were tested with real players. The Lua bridge, client, and local
-test command passed 34 automated checks for v1.0.1, including real Windows
-file-sharing locks.
+Both directions were tested with real players. v1.0.2 passed 27 Lua bridge
+checks and 18 client/local-command checks, including recorded Larxene and Vexen
+sequences and actual Windows file-sharing locks.
 
-## v1.0.1 client update
+## v1.0.2: boss retries and Vexen
 
-Fixes `PermissionError: [WinError 5]` when Lua reads `dlstate.cfg` while the
-client replaces it. Bridge writes retry without blocking, and incoming deaths
-remain pending until written successfully.
+Some boss retries unload Sora for longer than the old two-second timeout,
+which could discard the outgoing death. The bridge now detects the game's
+native **Continue** selection directly and distinguishes **Return to Title**.
+The first Larxene fight was verified live with one outgoing client send.
 
-If v1.0.0 is installed, close the KHRECOM client and run the updated client
-installer below. Restart the client and enable `/deathlink`. The existing Lua
-bridge is compatible with this update. For persistent warnings, close duplicate
-clients and check the bridge folder's write permissions.
+Vexen's automatic revival sends no DeathLink. A later actual game over still
+sends one when Continue is selected; that sequence was also verified live.
+
+**Upgrading from v1.0.1:** close the game, update this mod in OpenKH (or import
+the v1.0.2 release ZIP), rebuild and restart the game. Keep only one DeathLink
+companion enabled and keep backed-up Lua outside active script directories.
+The client archive is unchanged from v1.0.1; reinstalling that client is
+unnecessary. Enable `/deathlink` after any fresh client launch.
+
+**Upgrading from v1.0.0 or an older patch:** update and rebuild the OpenKH mod,
+and also install the bundled client as described below. It includes v1.0.1's
+Windows file-sharing fix, nonblocking bridge retries and pending incoming
+DeathLink delivery.
 
 ## Install the mod
 

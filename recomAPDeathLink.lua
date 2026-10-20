@@ -7,9 +7,12 @@ LUAGUI_DESC = "DeathLink receive; send natural deaths on Continue"
 local actor_address = 0x87B390
 local save_address = 0x87CBF8
 local time_address = 0x87B0E0
+local game_ui_address = 0x87B0B0
+local game_ui_vtable = 0x5653D8
 local enabled = false
 local bridge_path
 local death_latched = false
+local continue_handled = false
 local suppress_retry = false
 local actor_gap_started
 local last_incoming = 0
@@ -68,6 +71,24 @@ local function set_bit(value, bit, on)
     if on and not bit_set(value, bit) then return value + bit end
     if not on and bit_set(value, bit) then return value - bit end
     return value
+end
+
+-- Native menu handlers 1AC260/1AC2B0 set Continue/Title flags; 1AA6B0
+-- changes phase to 7/11 for retry, or 14 for Return to Title. These remain
+-- observable independently of Sora, so retry loading duration is irrelevant.
+local function retry_choice()
+    local ui = pointer(game_ui_address)
+    if ui == nil then return nil end
+    local vtable = pointer(ui, true)
+    local expected_first = pointer(game_ui_vtable)
+    local expected_second = pointer(game_ui_vtable + 8)
+    if vtable == nil or expected_first == nil or expected_second == nil then return nil end
+    if pointer(vtable, true) ~= expected_first or pointer(vtable + 8, true) ~= expected_second then return nil end
+    local flags = ReadInt(ui + 0x5A0, true)
+    local phase = ReadInt(ui + 0x580, true)
+    if bit_set(flags, 0x20) or phase == 14 then return "title" end
+    if bit_set(flags, 0x10) or phase == 7 or phase == 11 then return "continue" end
+    return nil
 end
 
 local function controller(current)
@@ -136,6 +157,31 @@ local function tick()
             if current ~= nil and not current.defeated and current.action ~= 29 then reset_latch() end
         end
         return
+    end
+    -- The defeated actor can remain alive in memory during the fade. Do not
+    -- latch that same death again after handling its Continue selection.
+    if continue_handled then
+        local resumed = state()
+        if resumed == nil or resumed.defeated or resumed.action == 29 then return end
+        continue_handled = false
+    end
+    if death_latched or suppress_retry then
+        local choice = retry_choice()
+        if choice == "title" then
+            reset_latch()
+            return
+        elseif choice == "continue" then
+            if suppress_retry then
+                ConsolePrint("DeathLink: linked death completed; outgoing echo suppressed")
+                reset_latch()
+                continue_handled = true
+                return
+            elseif death_latched and send_retry() then
+                reset_latch()
+                continue_handled = true
+                return
+            end
+        end
     end
     local current, missing_reason = state()
     if current == nil then
@@ -207,7 +253,7 @@ function _OnInit()
     if local_app_data == nil then enabled = false end
     if enabled then
         bridge_path = local_app_data .. "\\KHRECOM\\"
-        ConsolePrint("DeathLink: Steam bridge loaded; receive enabled; natural deaths send on Continue")
+        ConsolePrint("DeathLink: Steam bridge v1.0.2 loaded; native Continue detection enabled")
     else
         ConsolePrint("DeathLink: unsupported game/build; bridge disabled")
     end
